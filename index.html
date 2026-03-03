@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Value-A | お金の性格診断</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600&family=Noto+Serif+JP:wght@300;400;600&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --gold-dim: #7a6030;
+    --bg-deep: #080b10;
+    --bg-card: #0d1117;
+    --bg-panel: #111820;
+    --border: rgba(201,168,76,0.2);
+    --text-primary: #e8e0d0;
+    --text-secondary: #8a8070;
+    --text-dim: #4a4540;
+    --accent-blue: #2a4a6a;
+    --accent-red: #6a2a2a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Serif JP', serif;
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* Animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 80% 50% at 20% 20%, rgba(201,168,76,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(42,74,106,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 100% 100% at 50% 50%, rgba(8,11,16,0) 0%, #080b10 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Grain texture */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 0 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Gold line separator */
+  .gold-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .header {
+    padding: 40px 0 24px;
+    text-align: center;
+  }
+
+  .brand-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.8rem;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    text-shadow: 0 0 40px rgba(201,168,76,0.3);
+  }
+
+  .brand-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    text-transform: uppercase;
+  }
+
+  /* Screen transitions */
+  .screen {
+    display: none;
+    animation: fadeSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .screen.active {
+    display: flex;
+    flex-direction: column;
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeSlideOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-20px); }
+  }
+
+  /* Intro screen */
+  .intro-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 40px 32px;
+    margin: 24px 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .intro-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .intro-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--gold-light);
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  .intro-desc {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 2;
+    margin-bottom: 24px;
+  }
+
+  .intro-stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .stat-item {
+    flex: 1;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    padding: 16px 12px;
+    text-align: center;
+    border-radius: 2px;
+  }
+
+  .stat-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.8rem;
+    color: var(--gold);
+    display: block;
+  }
+
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    width: 100%;
+    padding: 18px;
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gold);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .btn-primary:hover::before { transform: translateX(0); }
+  .btn-primary:hover { color: var(--bg-deep); }
+  .btn-primary span { position: relative; z-index: 1; }
+
+  /* Progress bar */
+  .progress-wrap {
+    margin: 16px 0 8px;
+  }
+
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+    letter-spacing: 0.1em;
+  }
+
+  .progress-bar-bg {
+    height: 2px;
+    background: rgba(201,168,76,0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+  }
+
+  .progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    right: 0; top: -2px;
+    width: 6px; height: 6px;
+    background: var(--gold-light);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--gold);
+  }
+
+  /* Question card */
+  .q-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 32px;
+    margin: 16px 0;
+    position: relative;
+  }
+
+  .q-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .q-number {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 0.85rem;
+    color: var(--gold-dim);
+    letter-spacing: 0.2em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .q-number::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .q-axis {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--gold-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    display: inline-block;
+  }
+
+  .q-text {
+    font-size: 1.05rem;
+    font-weight: 400;
+    line-height: 1.9;
+    color: var(--text-primary);
+    margin-bottom: 28px;
+  }
+
+  /* Answer options */
+  .options-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .option-btn {
+    background: var(--bg-panel);
+    border: 1px solid rgba(201,168,76,0.12);
+    color: var(--text-secondary);
+    padding: 16px 20px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    border-radius: 1px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .option-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(201,168,76,0.05), transparent);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+
+  .option-btn:hover {
+    border-color: rgba(201,168,76,0.4);
+    color: var(--text-primary);
+    transform: translateX(4px);
+  }
+
+  .option-btn:hover::before { opacity: 1; }
+
+  .option-btn.selected {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.08);
+    color: var(--gold-light);
+  }
+
+  .option-score {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    color: var(--gold-dim);
+    min-width: 20px;
+    padding-top: 1px;
+    transition: color 0.25s;
+  }
+
+  .option-btn.selected .option-score { color: var(--gold); }
+
+  .option-label {
+    flex: 1;
+  }
+
+  /* Result screen */
+  .result-header {
+    text-align: center;
+    padding: 32px 0 20px;
+  }
+
+  .result-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    border: 1px solid var(--border);
+    padding: 6px 16px;
+    display: inline-block;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  .result-type {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 400;
+    color: var(--gold-light);
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+
+  /* Chart container */
+  .chart-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 28px;
+    margin: 16px 0;
+    position: relative;
+  }
+
+  .chart-wrap::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .chart-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  /* Score bars */
+  .scores-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 16px 0;
+  }
+
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .score-axis-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--text-secondary);
+    width: 72px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
+  .score-bar-track {
+    flex: 1;
+    height: 3px;
+    background: rgba(201,168,76,0.08);
+    position: relative;
+  }
+
+  .score-bar-value {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+    transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+  }
+
+  .score-bar-value::after {
+    content: '';
+    position: absolute;
+    right: -1px; top: -3px;
+    width: 9px; height: 9px;
+    border: 1px solid var(--gold);
+    background: var(--bg-deep);
+    border-radius: 50%;
+  }
+
+  .score-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    color: var(--gold);
+    min-width: 20px;
+    text-align: right;
+  }
+
+  /* Advice card */
+  .advice-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 32px;
+    margin: 16px 0;
+    position: relative;
+  }
+
+  .advice-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .advice-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 0.3em;
+    color: var(--gold-dim);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .advice-eyebrow::before {
+    content: '';
+    width: 20px; height: 1px;
+    background: var(--gold-dim);
+  }
+
+  .advice-type-tag {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.3rem;
+    color: var(--gold-light);
+    margin-bottom: 20px;
+    line-height: 1.5;
+    border-left: 2px solid var(--gold);
+    padding-left: 16px;
+  }
+
+  .advice-text {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 2.1;
+    white-space: pre-line;
+  }
+
+  .advice-highlight {
+    color: var(--gold-light);
+    font-weight: 600;
+  }
+
+  /* Action buttons */
+  .btn-secondary {
+    width: 100%;
+    padding: 16px;
+    background: transparent;
+    border: 1px solid rgba(201,168,76,0.25);
+    color: var(--text-secondary);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 12px;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
+  /* Footer */
+  .footer {
+    padding: 32px 0 24px;
+    text-align: center;
+  }
+
+  .footer-disclaimer {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+    border-top: 1px solid rgba(201,168,76,0.08);
+    padding-top: 20px;
+    margin-top: 8px;
+  }
+
+  /* Decorative corner */
+  .corner-deco {
+    position: absolute;
+    width: 20px; height: 20px;
+    border-color: var(--gold-dim);
+    border-style: solid;
+    border-width: 0;
+    opacity: 0.5;
+  }
+
+  .corner-deco.tl { top: 8px; left: 8px; border-top-width: 1px; border-left-width: 1px; }
+  .corner-deco.tr { top: 8px; right: 8px; border-top-width: 1px; border-right-width: 1px; }
+  .corner-deco.bl { bottom: 8px; left: 8px; border-bottom-width: 1px; border-left-width: 1px; }
+  .corner-deco.br { bottom: 8px; right: 8px; border-bottom-width: 1px; border-right-width: 1px; }
+
+  /* Loading dots */
+  .loading-dots {
+    display: inline-flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .loading-dots span {
+    width: 4px; height: 4px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: dotPulse 1.4s infinite ease-in-out;
+  }
+
+  .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes dotPulse {
+    0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1.2); }
+  }
+
+  /* Calculating screen */
+  #calcScreen {
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    text-align: center;
+    gap: 24px;
+  }
+
+  .calc-ring {
+    width: 80px; height: 80px;
+    border: 1px solid rgba(201,168,76,0.15);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 1.5s linear infinite;
+    position: relative;
+  }
+
+  .calc-ring::after {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border: 1px solid rgba(201,168,76,0.08);
+    border-bottom-color: var(--gold-dim);
+    border-radius: 50%;
+    animation: spin 2s linear infinite reverse;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .calc-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  /* Slide-in animation for result elements */
+  .result-animate {
+    opacity: 0;
+    transform: translateY(12px);
+    animation: resultReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes resultReveal {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .delay-1 { animation-delay: 0.1s; }
+  .delay-2 { animation-delay: 0.25s; }
+  .delay-3 { animation-delay: 0.4s; }
+  .delay-4 { animation-delay: 0.55s; }
+  .delay-5 { animation-delay: 0.7s; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="brand-name">Value-A</div>
+    <div class="brand-sub">Private Wealth Psychology Analysis</div>
+  </div>
+
+  <!-- INTRO SCREEN -->
+  <div class="screen active" id="introScreen">
+    <div class="intro-card">
+      <div class="corner-deco tl"></div>
+      <div class="corner-deco tr"></div>
+      <div class="corner-deco bl"></div>
+      <div class="corner-deco br"></div>
+      <div class="intro-title">あなたの<br>「お金の性格」を<br>解き明かす</div>
+      <p class="intro-desc">5つの設問を通じて、行動経済学の観点からあなたの財務的思考パターンを分析します。<br>所要時間：約2〜3分</p>
+      <div class="intro-stats">
+        <div class="stat-item">
+          <span class="stat-num">5</span>
+          <span class="stat-label">Questions</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">5</span>
+          <span class="stat-label">Dimensions</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">7</span>
+          <span class="stat-label">Patterns</span>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="startQuiz()"><span>診断をはじめる ›</span></button>
+    </div>
+    <div class="footer">
+      <div class="footer-disclaimer">
+        ※本診断は心理傾向を示すものであり、特定の金融商品の勧誘や投資助言を行うものではありません
+      </div>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div class="screen" id="quizScreen">
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <span id="progressLabel">QUESTION 1 / 5</span>
+        <span id="progressPct">20%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressFill" style="width: 20%"></div>
+      </div>
+    </div>
+
+    <div class="q-card" id="qCard">
+      <div class="corner-deco tl"></div>
+      <div class="corner-deco br"></div>
+      <div class="q-number" id="qNumber">Question 01</div>
+      <div class="q-axis" id="qAxis">NOW PRIORITY</div>
+      <div class="q-text" id="qText"></div>
+      <div class="options-grid" id="optionsGrid"></div>
+    </div>
+  </div>
+
+  <!-- CALCULATING SCREEN -->
+  <div class="screen" id="calcScreen">
+    <div class="calc-ring"></div>
+    <div class="calc-text">Analyzing your patterns <span class="loading-dots"><span></span><span></span><span></span></span></div>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div class="screen" id="resultScreen">
+    <div class="result-header result-animate delay-1">
+      <div class="result-badge">Your Money Profile</div>
+      <div class="result-type" id="resultType"></div>
+    </div>
+
+    <div class="chart-wrap result-animate delay-2">
+      <div class="corner-deco tl"></div>
+      <div class="corner-deco tr"></div>
+      <div class="chart-label">Behavioral Finance Radar</div>
+      <canvas id="radarChart" height="280"></canvas>
+    </div>
+
+    <div class="scores-grid result-animate delay-3" id="scoresGrid"></div>
+
+    <div class="advice-card result-animate delay-4">
+      <div class="corner-deco tl"></div>
+      <div class="corner-deco br"></div>
+      <div class="advice-eyebrow">FP からの診断レポート</div>
+      <div class="advice-type-tag" id="adviceTitle"></div>
+      <div class="advice-text" id="adviceText"></div>
+    </div>
+
+    <button class="btn-secondary" onclick="resetQuiz()">› もう一度診断する</button>
+
+    <div class="footer">
+      <div class="footer-disclaimer">
+        ※本診断は心理傾向を示すものであり、特定の金融商品の勧誘や投資助言を行うものではありません
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================
+// DATA
+// =====================
+const questions = [
+  {
+    id: 1,
+    axis: 'NOW PRIORITY',
+    axisLabel: '今優先度',
+    text: '今月、臨時ボーナスが10万円入りました。あなたが最初に思うことは？',
+    options: [
+      { score: 1, text: 'まず貯蓄・投資に回してから残りで使う' },
+      { score: 2, text: '半分は積み立てて、半分は少し贅沢に使おう' },
+      { score: 3, text: 'とりあえず銀行に置いて、必要になったら考える' },
+      { score: 4, text: 'ずっと欲しかったものを買って、残りを貯金しよう' },
+      { score: 5, text: '今しかないこの瞬間を楽しもう。残りで考える' },
+    ]
+  },
+  {
+    id: 2,
+    axis: 'SUNK COST',
+    axisLabel: '過去執着度',
+    text: '3年前に高額購入したコートが、今は全く好みでなくなりました。あなたは？',
+    options: [
+      { score: 1, text: '即フリマアプリへ。場所と思考をスッキリさせる' },
+      { score: 2, text: 'もう一シーズン使えそうなら着てから処分する' },
+      { score: 3, text: 'なんとなく手放せず、クローゼットの奥に眠らせる' },
+      { score: 4, text: 'あの時高かったのに…と思いつつ何年も保有する' },
+      { score: 5, text: '高かったから絶対手放さない。いつか使う日が来る' },
+    ]
+  },
+  {
+    id: 3,
+    axis: 'SOCIAL REFERENCE',
+    axisLabel: '他人基準度',
+    text: '友人が高級ブランドの財布を持っているのを見た。あなたの内心は？',
+    options: [
+      { score: 1, text: '他人の持ち物は自分と無関係。全く気にならない' },
+      { score: 2, text: 'いいな、とは思うが自分の予算と照らし合わせて判断' },
+      { score: 3, text: 'いつかは欲しいな、とほんのり意識する' },
+      { score: 4, text: '自分も同じくらいのものを持ちたいと強く思う' },
+      { score: 5, text: 'もっと上のランクのものを見せたくなる' },
+    ]
+  },
+  {
+    id: 4,
+    axis: 'LOSS AVERSION',
+    axisLabel: 'リスク拒絶度',
+    text: '「年率5%の可能性がある投資信託」の話を聞きました。あなたの反応は？',
+    options: [
+      { score: 1, text: 'すぐに調べて少額から始めてみる' },
+      { score: 2, text: '詳細を確認してリスクが許容内なら検討する' },
+      { score: 3, text: '興味はあるが、もっと安全な方法も探したい' },
+      { score: 4, text: '元本割れが怖いので定期預金の方が安心できる' },
+      { score: 5, text: '損する可能性がある話は聞きたくない' },
+    ]
+  },
+  {
+    id: 5,
+    axis: 'REALITY AVOIDANCE',
+    axisLabel: '現実逃避度',
+    text: '使っていないサブスク・保険・スマホプランについて、あなたは？',
+    options: [
+      { score: 1, text: '毎月家計を見直して不要なものはすぐ解約している' },
+      { score: 2, text: '半年に一度チェックして最適化するようにしている' },
+      { score: 3, text: 'たまに見直すが、面倒で後回しにしがち' },
+      { score: 4, text: '何となく気になりつつも、数年間手つかずのものがある' },
+      { score: 5, text: '正直どんな契約をしているかも曖昧。見るのが怖い' },
+    ]
+  }
+];
+
+const axisKeys = ['今優先', '過去執着', '他人基準', 'リスク拒絶', '現実逃避'];
+const axisKeysFull = ['今優先度', '過去執着度', '他人基準度', 'リスク拒絶度', '現実逃避度'];
+const axisKeysEN = ['NOW', 'SUNK COST', 'SOCIAL REF', 'RISK AVOID', 'AVOIDANCE'];
+
+// =====================
+// ADVICE PATTERNS
+// =====================
+function getAdvice(scores) {
+  const [now, sunk, social, risk, avoid] = scores;
+  const high = (v) => v >= 4;
+  const mid = (v) => v >= 3;
+
+  // Pattern 1: SNSキラキラ快楽主義
+  if (high(now) && high(social)) {
+    return {
+      type: '「SNSキラキラに踊らされる\n快楽主義者」',
+      title: 'SNSキラキラに踊らされる快楽主義者',
+      text: `映える写真は残りますが、銀行残高は残りません。
+
+あなたは「今この瞬間」の感情と「他者からの承認」に強く動かされるタイプ。衝動的な消費が習慣化しており、支出の多くが「自分のためでなく、見られるため」に使われている可能性があります。
+
+<FPからの処方箋>
+❶ まずSNS通知を1週間オフにしてみてください。欲しいものの8割は「見なければ欲しくならなかった」ものです。
+❷ 給与日翌日に「自動積立」を設定する。これが唯一効く「強制ブレーキ」です。
+❸ 月1回、支出履歴をカテゴリ別に確認。「誰のために使ったか」を問い直す習慣を。`,
+    };
+  }
+
+  // Pattern 2: 守りの迷子
+  if (high(risk) && high(avoid)) {
+    return {
+      type: '「石橋を叩いて壊す\n守りの迷子」',
+      title: '石橋を叩いて壊す、守りの迷子',
+      text: `損をしないために動かないことが、インフレという最大の損を招いています。
+
+現在の定期預金の実質金利はほぼゼロ以下。「安全」に見える現金保有は、静かに価値を失い続けています。リスクを恐れることが、最大のリスクになっているのです。
+
+<FPからの処方箋>
+❶ まず100円のポイント運用から始めてください。損をしても100円です。痛みのない一歩を体験することが重要。
+❷ 固定費の見直しから着手。投資前に「守る資産」を整理することで心理的安全性が生まれます。
+❸ 長期・分散・積立の三原則を学ぶだけでも、リスクへの認識が変わります。`,
+    };
+  }
+
+  // Pattern 3: コレクター型
+  if (high(sunk) && high(social)) {
+    return {
+      type: '「見栄のために溜め込む\nコレクター型」',
+      title: '見栄のために溜め込む、コレクター型',
+      text: `あなたの部屋は「過去の自分」で埋め尽くされています。そして新しいものを「他人の目線」で選び続けている。
+
+サンクコスト（埋没費用）への執着と社会的承認欲求の組み合わせは、最も資産を圧迫するパターンの一つです。
+
+<FPからの処方箋>
+❶ 「もし今日これを持っていなかったとして、同じ値段で買うか？」この問いが断捨離の鍵です。
+❷ 購入前に「これは誰のために買うのか」を3秒だけ考える。自分のためなら買う。見せるためなら待つ。
+❸ モノを手放すたびに「その評価額」を仮想積立口座に記録してみてください。解放感が数値化されます。`,
+    };
+  }
+
+  // Pattern 4: 今だけ主義
+  if (high(now) && !high(social) && !high(risk)) {
+    return {
+      type: '「今の快楽を\n合理化する現在バイアス型」',
+      title: '今の快楽を合理化する、現在バイアス型',
+      text: `「来月から節約しよう」——この言葉を今まで何度言いましたか？
+
+現在バイアスとは、遠い将来の報酬よりも目の前の快楽を過剰に評価する認知の歪みです。あなたは未来の自分に「ツケ」を払わせ続けています。
+
+<FPからの処方箋>
+❶ 「未来の自分への給与」として手取りの10%を別口座に自動移動する。あると使う、なければ使えない。
+❷ 大きな買い物は「72時間ルール」を適用。72時間後も欲しければ本物の欲求です。
+❸ 老後の自分の顔を想像してみてください。その人への責任感が、今の行動を変えます。`,
+    };
+  }
+
+  // Pattern 5: 万能型バランサー
+  if (scores.every(v => v <= 3)) {
+    return {
+      type: '「堅実な\nバランス型』',
+      title: '堅実なバランス型・次のステージへ',
+      text: `おめでとうございます。あなたは行動経済学的バイアスが比較的少ない、稀なタイプです。
+
+感情的支出も少なく、現実と向き合える姿勢を持っています。しかしこのタイプが陥りがちな罠は「安定の過信」——守りが上手すぎて攻めを忘れること。
+
+<FPからの処方箋>
+❶ 今こそ資産形成の「加速フェーズ」に入るタイミングです。NISAの枠を最大活用していますか？
+❷ 月一回「自分のFP会議」を設けてください。目標・現状・行動の三点を30分で確認するだけで資産形成速度が変わります。
+❸ 家計のボトルネックを一つ特定し、年内に改善する。小さな改善の積み重ねが複利効果を生みます。`,
+    };
+  }
+
+  // Pattern 6: 回避型
+  if (high(avoid) && mid(sunk)) {
+    return {
+      type: '「先送り癖の\nファイナンシャル眠り姫」',
+      title: '先送り癖のファイナンシャル眠り姫',
+      text: `「いつか見直そう」が口癖のあなたへ。固定費は放置するほど、静かに出血し続けています。
+
+過去への執着と現実回避の組み合わせは、「見直せない・捨てられない」二重のロックを作り出します。あなたの財布は今この瞬間も、使っていないサービスへお金を払い続けています。
+
+<FPからの処方箋>
+❶ 今夜30分だけ。クレジットカードの引き落とし明細を開いてください。最初の直視が最大の壁です。
+❷ 「解約してよかった」体験を一つ作る。その快感が次の行動を引き出します。
+❸ 家計管理アプリを一つ選んで連携設定するだけ。見える化が先送り癖を断ち切る鍵です。`,
+    };
+  }
+
+  // Pattern 7: Default
+  return {
+    type: '「複合的な\n感情投資家」',
+    title: '複合的な感情投資家',
+    text: `あなたのお金の行動は、複数の心理バイアスが絡み合った複雑なパターンを持っています。
+
+状況によって判断軸がブレるため、「なぜあの時あれを買ったんだろう」という後悔が多いタイプかもしれません。
+
+<FPからの処方箋>
+❶ 支出を「必需・投資・欲求・感情」の4つに分類する習慣をつける。感情支出の比率が見えてきます。
+❷ 大きな意思決定の前に「48時間クーリングオフ」を自分ルールにする。
+❸ あなたの最も強いバイアス（スコアが最高の軸）に絞って、月一つだけ改善行動を取る。全部やろうとしないことが継続の秘訣です。`,
+  };
+}
+
+// =====================
+// STATE
+// =====================
+let currentQ = 0;
+let answers = [];
+let radarChartInstance = null;
+
+// =====================
+// QUIZ LOGIC
+// =====================
+function startQuiz() {
+  currentQ = 0;
+  answers = [];
+  showScreen('quizScreen');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = questions[currentQ];
+  const pct = Math.round(((currentQ + 1) / questions.length) * 100);
+
+  document.getElementById('progressLabel').textContent = `QUESTION ${currentQ + 1} / ${questions.length}`;
+  document.getElementById('progressPct').textContent = `${pct}%`;
+  document.getElementById('progressFill').style.width = `${pct}%`;
+  document.getElementById('qNumber').textContent = `Question 0${q.id}`;
+  document.getElementById('qAxis').textContent = q.axis;
+  document.getElementById('qText').textContent = q.text;
+
+  const grid = document.getElementById('optionsGrid');
+  grid.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.style.animationDelay = `${i * 0.08}s`;
+    btn.style.animation = 'fadeSlideIn 0.5s cubic-bezier(0.16,1,0.3,1) forwards';
+    btn.style.opacity = '0';
+    btn.innerHTML = `<span class="option-score">${opt.score}</span><span class="option-label">${opt.text}</span>`;
+    btn.onclick = () => selectAnswer(opt.score, btn);
+    grid.appendChild(btn);
+  });
+
+  // Animate card
+  const card = document.getElementById('qCard');
+  card.style.animation = 'none';
+  card.offsetHeight;
+  card.style.animation = 'fadeSlideIn 0.5s cubic-bezier(0.16,1,0.3,1) forwards';
+}
+
+function selectAnswer(score, btn) {
+  document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+
+  setTimeout(() => {
+    answers[currentQ] = score;
+    if (currentQ < questions.length - 1) {
+      currentQ++;
+      renderQuestion();
+    } else {
+      calculateResult();
+    }
+  }, 420);
+}
+
+function calculateResult() {
+  showScreen('calcScreen');
+  setTimeout(() => {
+    showResult();
+  }, 1800);
+}
+
+function showResult() {
+  const scores = answers;
+  const advice = getAdvice(scores);
+
+  document.getElementById('resultType').textContent = advice.type;
+  document.getElementById('adviceTitle').textContent = advice.title;
+  document.getElementById('adviceText').innerHTML = advice.text.replace(
+    /<FPからの処方箋>/g,
+    '<span class="advice-highlight">── FP からの処方箋</span>'
+  );
+
+  // Score bars
+  const grid = document.getElementById('scoresGrid');
+  grid.innerHTML = '';
+  scores.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'score-row';
+    row.innerHTML = `
+      <div class="score-axis-label">${axisKeysEN[i]}</div>
+      <div class="score-bar-track">
+        <div class="score-bar-value" style="width: 0%" data-target="${(s / 5) * 100}%"></div>
+      </div>
+      <div class="score-num">${s}</div>
+    `;
+    grid.appendChild(row);
+  });
+
+  showScreen('resultScreen');
+
+  // Animate bars after render
+  setTimeout(() => {
+    document.querySelectorAll('.score-bar-value').forEach(bar => {
+      bar.style.width = bar.dataset.target;
+    });
+  }, 300);
+
+  // Draw radar chart
+  setTimeout(() => drawRadar(scores), 400);
+}
+
+function drawRadar(scores) {
+  if (radarChartInstance) radarChartInstance.destroy();
+
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  radarChartInstance = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: axisKeysFull,
+      datasets: [{
+        data: scores,
+        backgroundColor: 'rgba(201,168,76,0.08)',
+        borderColor: 'rgba(201,168,76,0.7)',
+        borderWidth: 1.5,
+        pointBackgroundColor: 'rgba(201,168,76,0.9)',
+        pointBorderColor: '#080b10',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+      }]
+    },
+    options: {
+      responsive: true,
+      animation: {
+        duration: 1200,
+        easing: 'easeInOutQuart',
+      },
+      scales: {
+        r: {
+          min: 0,
+          max: 5,
+          ticks: {
+            stepSize: 1,
+            color: 'rgba(201,168,76,0.25)',
+            font: { family: 'DM Mono', size: 9 },
+            backdropColor: 'transparent',
+          },
+          grid: {
+            color: 'rgba(201,168,76,0.08)',
+            circular: false,
+          },
+          angleLines: {
+            color: 'rgba(201,168,76,0.1)',
+          },
+          pointLabels: {
+            color: '#8a8070',
+            font: { family: 'Noto Serif JP', size: 11 },
+          }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(13,17,23,0.95)',
+          borderColor: 'rgba(201,168,76,0.3)',
+          borderWidth: 1,
+          titleColor: '#c9a84c',
+          bodyColor: '#8a8070',
+          padding: 12,
+          titleFont: { family: 'DM Mono', size: 10 },
+          bodyFont: { family: 'Noto Serif JP', size: 12 },
+          callbacks: {
+            title: (items) => axisKeysFull[items[0].dataIndex],
+            label: (item) => `  スコア: ${item.raw} / 5`,
+          }
+        }
+      }
+    }
+  });
+}
+
+function resetQuiz() {
+  showScreen('introScreen');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    s.style.animation = '';
+  });
+  const target = document.getElementById(id);
+  target.classList.add('active');
+}
+</script>
+</body>
+</html>
